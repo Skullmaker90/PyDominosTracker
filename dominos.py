@@ -1,7 +1,8 @@
 from bs4 import BeautifulSoup as BS
 import requests
-import logging
 import prowlpy
+
+import logging
 import time
 
 logging.basicConfig(format='%(asctime)s %(message)s', filename='tracker.log', level=logging.DEBUG)
