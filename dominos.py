@@ -11,13 +11,14 @@ console.setLevel(logging.DEBUG)
 logging.getLogger('').addHandler(console)
 
 url = "https://order.dominos.com/orderstorage/GetTrackerData?Phone={}"
-prowl_api = None
 
-def get_prowl_api(path):
+def get_prowl_api_key(path):
 	logging.info('Getting Prowl Api...')
 	with open(path) as f:
-		prowl_api = readline()
-		logging.debug('Prowl Key: {}'.format(prowl_api))
+		r = f.readline()
+		logging.debug('Prowl Key: {}'.format(r))
+		f.close()
+		return r[:-1]
 
 def get_numbers(path):
 	phone_list = {}
@@ -57,18 +58,17 @@ def parse_order(page):
 	return r
 
 def has_order(status):
-	logging.debug('Checking order status: {}'.format(status))
+	logging.debug('Checking order status...'.format(status))
 	return status != ""
 
-def post_prowl(event=None, description=None):
-	prowl = prowlpy.Prowl(prowl_api)
+def post_prowl(prowl_key, event=None, description=None):
+	prowl = prowlpy.Prowl(prowl_key)
 	prowl.post(application="Domino's Pizza Tracker", event=event, description=description)
 	logging.info('Prowl Posted, Event: "{}", Description: "{}"'.format(event, description))
 
 def get_page(name, number):
 	try:
 		r = requests.get(url.format(str(number)), timeout=5)
-		logging.info('{}: {}'.format(r.url, r.status_code))
 		if r.status_code == 200:
 			return BS(r.content, "xml")
 	except requests.exceptions.Timeout:
@@ -82,8 +82,8 @@ def get_page(name, number):
 def main():
 	pizza = False
 	_path = '/home/ubuntu/python/dominos/'
-	get_prowl_api()
-	post_prowl(event='Checking Orders...')
+	prowl_key = get_prowl_api_key('/home/ubuntu/python/dominos/prowl_api_key')
+	post_prowl(prowl_key, event='Checking Orders...')
 	phone_list = get_numbers(_path + 'phone_numbers')
 	check_failed = []
 	for name, number in phone_list.items():
@@ -99,8 +99,10 @@ def main():
 				store_order(_path + 'Order History', parsed_order)
 				event = "{} Ordered Domino's!".format(name)
 				description = "Date: {}\nTime: {}\n\nYour homie {} ordered:\n\n{}\nThe method of delivery is: {}".format(parsed_order[2], parsed_order[3], name, parsed_order[4], parsed_order[5])
-				post_prowl(event, description)
+				post_prowl(prowl_key, event, description)
 				pizza = True
+		else:
+			logging.info('No Order Found...\n')
 		time.sleep(5)
 	if not pizza:
 		r_str = 'Homies still hungry.\nCheck failed for:\n\n\t'
@@ -108,6 +110,6 @@ def main():
 		for item in check_failed:
 			item += '\n\t'
 			r_str += item
-		post_prowl(event=r_str)
+		post_prowl(prowl_key, event=r_str)
 
 main()
