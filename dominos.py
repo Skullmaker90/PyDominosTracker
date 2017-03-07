@@ -53,6 +53,7 @@ def parse_order(page):
         _id = str(page.find('OrderID').text)
 	r = [date, time, description, method, _id]
 	logging.debug('Parsed page: {}'.format(r))
+	return r
 
 def has_order(status):
 	logging.debug('Checking order status: {}'.format(status))
