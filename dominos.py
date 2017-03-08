@@ -5,7 +5,7 @@ import prowlpy
 import logging
 import time
 
-logging.basicConfig(format='%(asctime)s %(message)s', filename='tracker.log', level=logging.DEBUG)
+logging.basicConfig(format='%(asctime)s %(message)s', filename='/home/ubuntu/python/dominos/tracker.log', level=logging.DEBUG)
 console = logging.StreamHandler()
 console.setLevel(logging.DEBUG)
 logging.getLogger('').addHandler(console)
@@ -77,6 +77,13 @@ def get_page(name, number):
 	except:
 		logging.critical('Request Failed...')
                 pass
+
+def get_order(number):
+	page = get_page(number)
+	if has_order(page.find('OrderStatuses').text):
+		return parse_order(page)
+	else:
+		return "No order found..."
 		
 
 def main():
@@ -103,13 +110,15 @@ def main():
 				pizza = True
 		else:
 			logging.info('No Order Found...\n')
-		time.sleep(5)
+		time.sleep(7)
 	if not pizza:
-		r_str = 'Homies still hungry.\nCheck failed for:\n\n\t'
+		r_str = 'Homies still hungry.\n'
 		logging.info('No orders found...')
-		for item in check_failed:
-			item += '\n\t'
-			r_str += item
+		if check_failed:
+			r_str += 'Check failed for:\n\n\t'
+			for item in check_failed:
+				item += '\n\t'
+				r_str += item
 		post_prowl(prowl_key, event=r_str)
 
 main()
